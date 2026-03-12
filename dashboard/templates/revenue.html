@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Revenue Trend</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<h1>Revenue Trend</h1>
+
+<canvas id="chart"></canvas>
+
+<br>
+<button onclick="location.href='/'">Back</button>
+
+<script>
+
+async function load(){
+
+const res = await fetch("/data")
+const data = await res.json()
+
+new Chart(
+document.getElementById("chart"),
+{
+type:"line",
+data:{
+labels:data.revenue_trend.map((_,i)=>i),
+datasets:[{
+label:"Revenue",
+data:data.revenue_trend
+}]
+}
+}
+)
+
+}
+
+load()
+
+</script>
+
+</body>
+</html>

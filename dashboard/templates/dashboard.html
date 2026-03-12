@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Real-Time Business Intelligence System</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#eef1f5;
+}
+
+.sidebar{
+width:220px;
+background:#1f2937;
+height:100vh;
+position:fixed;
+color:white;
+padding:20px;
+}
+
+.sidebar h2{
+text-align:center;
+}
+
+.sidebar button{
+width:100%;
+margin-top:15px;
+padding:10px;
+border:none;
+background:#374151;
+color:white;
+cursor:pointer;
+border-radius:5px;
+}
+
+.sidebar button:hover{
+background:#4b5563;
+}
+
+.main{
+margin-left:240px;
+padding:30px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin-bottom:30px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+text-align:center;
+}
+
+.charts{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:30px;
+}
+
+.chart-box{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+table{
+width:100%;
+background:white;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th,td{
+padding:10px;
+border:1px solid #ddd;
+text-align:center;
+}
+
+.alert{
+display:none;
+background:#ff4d4d;
+color:white;
+padding:12px;
+margin-bottom:20px;
+border-radius:6px;
+text-align:center;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>BI Dashboard</h2>
+
+<button onclick="location.href='/'">Dashboard</button>
+<button onclick="location.href='/categories'">Category Sales</button>
+<button onclick="location.href='/transactions_by_category'">Transaction Distribution</button>
+<button onclick="location.href='/revenue'">Revenue Analysis</button>
+<button onclick="location.href='/anomalies'">Anomaly Detection</button>
+<button onclick="location.href='/performance'">System Performance</button>
+
+</div>
+
+<div class="main">
+
+<h1>Real-Time Business Intelligence System</h1>
+
+<div id="alertBox" class="alert">
+⚠️ New Anomaly Transaction Detected!
+</div>
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Transactions</h3>
+<h2 id="transactions"></h2>
+</div>
+
+<div class="card">
+<h3>Total Revenue</h3>
+<h2 id="revenue"></h2>
+</div>
+
+<div class="card">
+<h3>Average Transaction</h3>
+<h2 id="average"></h2>
+</div>
+
+<div class="card">
+<h3>Anomalies</h3>
+<h2 id="anomalyCount"></h2>
+</div>
+
+</div>
+
+<div class="charts">
+
+<div class="chart-box">
+<h3>Revenue Trend</h3>
+<canvas id="revenueChart"></canvas>
+</div>
+
+<div class="chart-box">
+<h3>Sales by Category</h3>
+<canvas id="categoryChart"></canvas>
+</div>
+
+</div>
+
+<h3>Category Sales Details</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Category</th>
+<th>Total Sales</th>
+</tr>
+</thead>
+
+<tbody id="categoryTable"></tbody>
+
+</table>
+
+<h3>Live Transaction Stream</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Amount</th>
+<th>Category</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody id="transactionTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let revenueChart
+let categoryChart
+let lastAnomalyCount = 0
+
+async function loadData(){
+
+const res = await fetch("/data")
+const data = await res.json()
+
+document.getElementById("transactions").innerText=data.total_transactions
+document.getElementById("revenue").innerText=data.total_revenue
+document.getElementById("average").innerText=data.avg_transaction
+document.getElementById("anomalyCount").innerText=data.anomalies.length
+
+if(data.anomalies.length > lastAnomalyCount){
+    document.getElementById("alertBox").style.display="block"
+    setTimeout(()=>{
+        document.getElementById("alertBox").style.display="none"
+    },4000)
+}
+
+lastAnomalyCount = data.anomalies.length
+
+if(revenueChart) revenueChart.destroy()
+
+revenueChart = new Chart(
+document.getElementById("revenueChart"),
+{
+type:"line",
+data:{
+labels:data.revenue_time,
+datasets:[{
+label:"Revenue",
+data:data.revenue_trend,
+borderColor:"#2563eb",
+fill:false
+}]
+}
+}
+)
+
+if(categoryChart) categoryChart.destroy()
+
+categoryChart = new Chart(
+document.getElementById("categoryChart"),
+{
+type:"bar",
+data:{
+labels:Object.keys(data.category_sales),
+datasets:[{
+label:"Sales",
+data:Object.values(data.category_sales),
+backgroundColor:"#f59e0b"
+}]
+}
+}
+)
+
+let categoryRows=""
+
+Object.entries(data.category_sales).forEach(([cat,value])=>{
+categoryRows+=`
+<tr>
+<td>${cat}</td>
+<td>${value}</td>
+</tr>`
+})
+
+document.getElementById("categoryTable").innerHTML=categoryRows
+
+let rows=""
+
+data.recent_transactions.forEach(t=>{
+rows+=`
+<tr>
+<td>${t.Transaction_ID}</td>
+<td>${t.Amount}</td>
+<td>${t.Category}</td>
+<td>${t.Timestamp ?? ""}</td>
+</tr>`
+})
+
+document.getElementById("transactionTable").innerHTML=rows
+
+}
+
+setInterval(loadData,3000)
+loadData()
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Category Sales</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef1f5;
+margin:40px;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+.insights{
+display:flex;
+justify-content:space-between;
+margin-bottom:30px;
+}
+
+.insight-card{
+flex:1;
+background:#f8f9ff;
+margin:10px;
+padding:20px;
+border-radius:8px;
+text-align:center;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.insight-title{
+font-size:16px;
+margin-bottom:8px;
+font-weight:bold;
+}
+
+.insight-value{
+font-size:22px;
+color:#4a6cf7;
+margin-bottom:6px;
+}
+
+.insight-extra{
+font-size:14px;
+color:#555;
+}
+
+.chart-box{
+margin-bottom:30px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th{
+background:#4a6cf7;
+color:white;
+padding:12px;
+}
+
+td{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #ddd;
+}
+
+tr:hover{
+background:#f5f7ff;
+}
+
+button{
+margin-top:20px;
+padding:10px 20px;
+border:none;
+background:#4a6cf7;
+color:white;
+font-size:16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#2f4fd8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Category Sales</h1>
+
+<div class="container">
+
+<div class="insights">
+
+<div class="insight-card">
+<div class="insight-title">Top Category</div>
+<div class="insight-value" id="topCategory"></div>
+<div class="insight-extra" id="topValue"></div>
+</div>
+
+<div class="insight-card">
+<div class="insight-title">Fastest Growing</div>
+<div class="insight-value" id="fastCategory"></div>
+<div class="insight-extra" id="fastValue"></div>
+</div>
+
+<div class="insight-card">
+<div class="insight-title">Most Anomalies</div>
+<div class="insight-value" id="anomalyCategory"></div>
+<div class="insight-extra" id="anomalyValue"></div>
+</div>
+
+</div>
+
+
+<div class="chart-box">
+<canvas id="categoryChart"></canvas>
+</div>
+
+
+<h3>Category Sales Details</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Category</th>
+<th>Total Sales</th>
+</tr>
+</thead>
+
+<tbody id="tableData"></tbody>
+
+</table>
+
+<center>
+<button onclick="location.href='/'">Back to Dashboard</button>
+</center>
+
+</div>
+
+<script>
+
+let chart
+
+async function load(){
+
+const res = await fetch("/data")
+const data = await res.json()
+
+const labels = Object.keys(data.category_sales)
+const values = Object.values(data.category_sales)
+
+if(chart){
+chart.data.labels = labels
+chart.data.datasets[0].data = values
+chart.update()
+}
+else{
+
+chart = new Chart(
+document.getElementById("categoryChart"),
+{
+type:"bar",
+data:{
+labels:labels,
+datasets:[{
+label:"Sales",
+data:values,
+backgroundColor:"#4a6cf7"
+}]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{display:true}
+}
+}
+}
+)
+
+}
+
+let rows=""
+
+labels.forEach((c,i)=>{
+rows+=`
+<tr>
+<td>${c}</td>
+<td>${values[i].toLocaleString()}</td>
+</tr>`
+})
+
+document.getElementById("tableData").innerHTML=rows
+
+let maxValue = Math.max(...values)
+let maxIndex = values.indexOf(maxValue)
+
+document.getElementById("topCategory").innerText = labels[maxIndex]
+document.getElementById("topValue").innerText =
+"Total Sales: " + maxValue.toLocaleString()
+
+let sorted = [...values].sort((a,b)=>b-a)
+
+let secondValue = sorted[1]
+let fastIndex = values.indexOf(secondValue)
+
+document.getElementById("fastCategory").innerText = labels[fastIndex]
+document.getElementById("fastValue").innerText =
+"Total Sales: " + secondValue.toLocaleString()
+
+let anomalyCategory="None"
+let anomalyCount=0
+
+if(data.anomalies.length>0){
+
+let count={}
+
+data.anomalies.forEach(a=>{
+count[a.Category]=(count[a.Category]||0)+1
+})
+
+let maxCat = Object.keys(count).reduce((a,b)=>count[a]>count[b]?a:b)
+
+anomalyCategory=maxCat
+anomalyCount=count[maxCat]
+}
+
+document.getElementById("anomalyCategory").innerText = anomalyCategory
+document.getElementById("anomalyValue").innerText =
+"Anomalies: " + anomalyCount
+
+}
+
+setInterval(load,3000)
+
+load()
+
+</script>
+
+</body>
+</html>

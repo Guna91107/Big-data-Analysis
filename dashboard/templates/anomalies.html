@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Anomaly Transactions</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef1f5;
+margin:40px;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#4a6cf7;
+color:white;
+padding:12px;
+}
+
+td{
+padding:10px;
+text-align:center;
+border-bottom:1px solid #ddd;
+}
+
+tr:hover{
+background:#f5f7ff;
+}
+
+button{
+margin-top:20px;
+padding:10px 20px;
+border:none;
+background:#4a6cf7;
+color:white;
+font-size:16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#2f4fd8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Anomaly Transactions</h1>
+
+<div class="container">
+
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Amount</th>
+<th>Category</th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+<center>
+<button onclick="location.href='/'">Back to Dashboard</button>
+</center>
+
+</div>
+
+<script>
+
+async function load(){
+
+const res = await fetch("/data")
+const data = await res.json()
+
+let rows=""
+
+data.anomalies.forEach(a=>{
+rows+=`
+<tr>
+<td>${a.Transaction_ID}</td>
+<td>${a.Amount}</td>
+<td>${a.Category}</td>
+</tr>`
+})
+
+document.getElementById("table").innerHTML=rows
+
+}
+
+load()
+
+</script>
+
+</body>
+</html>
